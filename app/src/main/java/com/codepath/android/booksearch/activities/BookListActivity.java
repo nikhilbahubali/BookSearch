@@ -1,6 +1,7 @@
 package com.codepath.android.booksearch.activities;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
@@ -29,12 +30,13 @@ public class BookListActivity extends AppCompatActivity {
     private ListView lvBooks;
     private BookAdapter bookAdapter;
     private BookClient client;
+    private MenuItem miActionProgressMenuItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_book_list);
-        Toolbar toolbar = (Toolbar)findViewById(R.id.toolbar);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         lvBooks = (ListView) findViewById(R.id.lvBooks);
         ArrayList<Book> aBooks = new ArrayList<>();
@@ -53,7 +55,7 @@ public class BookListActivity extends AppCompatActivity {
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                 try {
                     JSONArray docs;
-                    if(response != null) {
+                    if (response != null) {
                         // Get the docs json array
                         docs = response.getJSONArray("docs");
                         // Parse json array into array of model objects
@@ -65,6 +67,7 @@ public class BookListActivity extends AppCompatActivity {
                             bookAdapter.add(book); // add book through the adapter
                         }
                         bookAdapter.notifyDataSetChanged();
+                        hideProgressBar();
                     }
                 } catch (JSONException e) {
                     // Invalid JSON format, show appropriate error.
@@ -88,6 +91,8 @@ public class BookListActivity extends AppCompatActivity {
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
+                showProgressBar();
+
                 // Fetch the data remotely
                 fetchBooks(query);
 
@@ -104,6 +109,30 @@ public class BookListActivity extends AppCompatActivity {
             }
         });
         return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        miActionProgressMenuItem = menu.findItem(R.id.miActionProgress);
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    private void showProgressBar() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                miActionProgressMenuItem.setVisible(true);
+            }
+        });
+    }
+
+    private void hideProgressBar() {
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                miActionProgressMenuItem.setVisible(false);
+            }
+        }, 2000);
     }
 
     @Override
