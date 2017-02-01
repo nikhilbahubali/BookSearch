@@ -1,5 +1,7 @@
 package com.codepath.android.booksearch.models;
 
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.text.TextUtils;
 
 import org.json.JSONArray;
@@ -8,10 +10,12 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
-public class Book {
+public class Book implements Parcelable {
     private String openLibraryId;
     private String author;
     private String title;
+    private String publishYear;
+    private String publisher;
 
     public String getOpenLibraryId() {
         return openLibraryId;
@@ -30,6 +34,14 @@ public class Book {
         return "http://covers.openlibrary.org/b/olid/" + openLibraryId + "-L.jpg?default=false";
     }
 
+    public String getPublishYear() {
+        return publishYear;
+    }
+
+    public String getPublisher() {
+        return publisher;
+    }
+
     // Returns a Book given the expected JSON
     public static Book fromJson(JSONObject jsonObject) {
         Book book = new Book();
@@ -44,6 +56,10 @@ public class Book {
             }
             book.title = jsonObject.has("title_suggest") ? jsonObject.getString("title_suggest") : "";
             book.author = getAuthor(jsonObject);
+            if (jsonObject.has("first_publish_year")) {
+                book.publishYear = jsonObject.getString("first_publish_year");
+            }
+            book.publisher = getPublisher(jsonObject);
         } catch (JSONException e) {
             e.printStackTrace();
             return null;
@@ -51,6 +67,19 @@ public class Book {
         // Return new object
         return book;
     }
+
+    private static String getPublisher(JSONObject jsonObject) {
+        try {
+            final JSONArray publishers = jsonObject.getJSONArray("publisher");
+            if (publishers != null) {
+                return publishers.getString(0);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
 
     // Return comma separated author list when there is more than one author
     private static String getAuthor(final JSONObject jsonObject) {
@@ -87,4 +116,41 @@ public class Book {
         }
         return books;
     }
+
+    public Book() {
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(this.openLibraryId);
+        dest.writeString(this.author);
+        dest.writeString(this.title);
+        dest.writeString(this.publishYear);
+        dest.writeString(this.publisher);
+    }
+
+    protected Book(Parcel in) {
+        this.openLibraryId = in.readString();
+        this.author = in.readString();
+        this.title = in.readString();
+        this.publishYear = in.readString();
+        this.publisher = in.readString();
+    }
+
+    public static final Creator<Book> CREATOR = new Creator<Book>() {
+        @Override
+        public Book createFromParcel(Parcel source) {
+            return new Book(source);
+        }
+
+        @Override
+        public Book[] newArray(int size) {
+            return new Book[size];
+        }
+    };
 }
